@@ -1,0 +1,21 @@
+Inter Font License
+==================
+
+Inter font files bundled in this directory are licensed under the SIL Open Font License 1.1 (SIL OFL).
+
+Source: https://github.com/rsms/inter
+Author: Rubén Paiement (rsms)
+License: SIL Open Font License 1.1
+
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+
+PREAMBLE
+The goals of the Open Font License (OFL) are to stimulate worldwide development of collaborative font projects, to support the font creation efforts of academic and linguistic communities, and to provide a free and open framework in which fonts may be shared and improved in partnership with others.
+
+PERMISSION & CONDITIONS
+- This Font Software is licensed under the SIL Open Font License, Version 1.1.
+- You are free to use, study, modify, merge, publish, distribute, and sell this font.
+- The fonts may NOT be sold by themselves.
+- Name of the fonts (Inter) may not be used in advertising or to promote the derivative fonts without specific prior written permission.
+
+Full license text: https://scripts.sil.org/OFL

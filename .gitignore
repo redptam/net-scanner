@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Speckit
+.specify/
+
+# Claude
+.claude/
+
+# Opencode
+.opencode/
+
+# Temporary
+test.txt
+*.log
+.env
+
+# Local runtime config (contains user's actual network/scan settings)
+scanner_config.json
