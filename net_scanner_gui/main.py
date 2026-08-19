@@ -115,16 +115,18 @@ class NetworkScannerApp:
         results_frame.pack(fill=tk.BOTH, expand=True)
 
         # Treeview for table
-        columns = ("IP", "Ping", "Ports")
+        columns = ("IP", "Hostname", "Ping", "Ports")
         self.tree = ttk.Treeview(
             results_frame, columns=columns, show="headings", selectmode="browse"
         )
 
         self.tree.heading("IP", text="IP Address")
+        self.tree.heading("Hostname", text="Hostname")
         self.tree.heading("Ping", text="Ping (ms)")
         self.tree.heading("Ports", text="Open Ports")
 
         self.tree.column("IP", width=75, anchor=tk.W)
+        self.tree.column("Hostname", width=180, anchor=tk.W)
         self.tree.column("Ping", width=50, anchor=tk.CENTER)
         self.tree.column("Ports", width=150, anchor=tk.W)
 
@@ -159,7 +161,7 @@ class NetworkScannerApp:
         self._detached_items: dict[str, int] = {}  # item ID → original index, hidden by filter
 
         # Scan results data for saving
-        self.scan_results = []  # list of dicts: {"ip": str, "ping": str, "ports": str, "alive": bool}
+        self.scan_results = []  # list of dicts: {"ip": str, "hostname": str, "ping": str, "ports": str, "alive": bool}
 
     # ------------------------------------------------------------------ #
     #  Menu Bar                                                           #
@@ -226,13 +228,14 @@ class NetworkScannerApp:
             with open(file_path, "w") as f:
                 f.write("Network Scan Results\n")
                 f.write("=" * 60 + "\n\n")
-                f.write(f"{'IP Address':<22}{'Ping (ms)':<14}{'Open Ports':<20}\n")
+                f.write(f"{'IP Address':<22}{'Hostname':<28}{'Ping (ms)':<14}{'Open Ports':<20}\n")
                 f.write("-" * 60 + "\n")
                 for entry in self.scan_results:
                     ip = entry.get("ip", "-")
+                    hostname = entry.get("hostname", "-")
                     ping = entry.get("ping", "-")
                     ports = entry.get("ports", "-")
-                    f.write(f"{ip:<22}{ping:<14}{ports:<20}\n")
+                    f.write(f"{ip:<22}{hostname:<28}{ping:<14}{ports:<20}\n")
             self.update_status(f"Results saved to {file_path}")
         except Exception as e:
             self.update_status(f"Error saving results: {e}")
@@ -541,7 +544,7 @@ class NetworkScannerApp:
         for ip in hosts:
             ip_str = str(ip)
             item_id = self.tree.insert(
-                "", tk.END, values=(f"● {ip_str}", "-", "-"), tags=("dead",)
+                "", tk.END, values=(f"● {ip_str}", "-", "-", "-"), tags=("dead",)
             )
             self.ip_to_item[ip_str] = item_id
 
@@ -576,11 +579,17 @@ class NetworkScannerApp:
                 if values[0]
                 else "-"
             )
+            clean_hostname = (
+                values[1].replace("● ", "").replace("○ ", "").strip()
+                if values[1]
+                else "-"
+            )
             self.scan_results.append(
                 {
                     "ip": clean_ip,
-                    "ping": values[1],
-                    "ports": values[2],
+                    "hostname": clean_hostname,
+                    "ping": values[2],
+                    "ports": values[3],
                     "alive": "dead" not in tag,
                 }
             )
@@ -593,13 +602,20 @@ class NetworkScannerApp:
 
         is_alive, latency = self.ping_host(ip)
 
+        hostname = "-"
+        if is_alive:
+            try:
+                hostname = socket.getfqdn(ip)
+            except Exception:
+                hostname = "-"
+
         if is_alive:
             # Update to Alive (Green)
             latency_str = f"{latency:.1f} ms" if latency is not None else "N/A"
             self.root.after(
                 0,
-                lambda ip=ip, ls=latency_str: self._update_tree_row(
-                    ip, "alive", "● " + ip, ls, ""
+                lambda ip=ip, hn=hostname, ls=latency_str: self._update_tree_row(
+                    ip, "alive", "● " + ip, "● " + hn, ls, ""
                 ),
             )
 
@@ -611,14 +627,14 @@ class NetworkScannerApp:
             if self.scanning:
                 self.root.after(
                     0,
-                    lambda ip=ip, ls=latency_str, ps=ports_str: self._update_tree_row(
-                        ip, "alive", "● " + ip, ls, ps
+                    lambda ip=ip, hn=hostname, ls=latency_str, ps=ports_str: self._update_tree_row(
+                        ip, "alive", "● " + ip, "● " + hn, ls, ps
                     ),
                 )
         else:
             # Host is dead (Red)
             self.root.after(
-                0, lambda ip=ip: self._update_tree_row(ip, "dead", "● " + ip, "N/A", "")
+                0, lambda ip=ip: self._update_tree_row(ip, "dead", "● " + ip, "○ -", "N/A", "")
             )
 
         # Update progress
@@ -628,10 +644,10 @@ class NetworkScannerApp:
             progress_percent, f"Scanning: {self.processed_hosts}/{self.total_hosts}"
         )
 
-    def _update_tree_row(self, ip, tag, ip_val, ping_val, ports_val):
+    def _update_tree_row(self, ip, tag, ip_val, hostname_val, ping_val, ports_val):
         item_id = self.ip_to_item.get(ip)
         if item_id:
-            self.tree.item(item_id, values=(ip_val, ping_val, ports_val), tags=(tag,))
+            self.tree.item(item_id, values=(ip_val, hostname_val, ping_val, ports_val), tags=(tag,))
 
     def ping_host(self, host):
         """Returns (is_alive, latency_ms)"""
